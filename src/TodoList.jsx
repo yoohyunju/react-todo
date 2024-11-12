@@ -1,35 +1,59 @@
 import { useState } from "react";
+import { v4 as uuidv4 } from "uuid";
 import "./App.css";
 
-const ToDoList = () => {
-  const [todos, setTodos] = useState(["방청소", "파스타 만들기", "음악 틀기"]);
-  const [inputVal, setInputVal] = useState("");
-  const [editIdx, setEditIdx] = useState(null);
-  const [editText, setEditText] = useState("");
+const TodoList = () => {
+  const [todos, setTodos] = useState([
+    { id: uuidv4(), text: "방청소", isChecked: false },
+    { id: uuidv4(), text: "파스타 만들기", isChecked: false },
+    { id: uuidv4(), text: "음악 틀기", isChecked: false },
+  ]);
+  const [todoText, setTodoText] = useState("");
+  const [editTodoIdx, setEditTodoIdx] = useState(null);
+  const [editTodoText, setEditTodoText] = useState("");
 
   const addTodo = () => {
-    setTodos([...todos, inputVal]);
-    setInputVal("");
+    if (todoText === "") {
+      alert("할 일을 입력해 주세요.");
+      return;
+    }
+    const newTodo = { id: uuidv4(), text: todoText, isChecked: false };
+    setTodos([...todos, newTodo]);
+    setTodoText("");
   };
 
   const startEditMode = (idx) => {
-    setEditText(todos[idx]);
-    setEditIdx(idx);
+    setEditTodoText(todos[idx]?.text);
+    setEditTodoIdx(idx);
   };
 
   const editTodo = () => {
     const editedTodoList = todos.map((todo, idx) =>
-      idx === editIdx ? editText : todo
+      idx === editTodoIdx ? { ...todo, text: editTodoText } : todo
     );
 
     setTodos(editedTodoList);
-    setInputVal("");
-    setEditIdx(null);
+    setTodoText("");
+    setEditTodoIdx(null);
   };
 
   const deleteTodo = (idx) => {
-    const newTodos = todos.filter((_, i) => i !== idx);
-    setTodos(newTodos);
+    const updatedTodos = todos.filter((_, i) => i !== idx);
+    setTodos(updatedTodos);
+  };
+
+  const toggleTodoChecked = (idx) => {
+    const updatedTodos = todos.map((todo, i) =>
+      i === idx ? { ...todo, isChecked: !todo.isChecked } : todo
+    );
+
+    // TODO: 추후 정렬 로직 변경
+    const sortedTodos = [
+      ...updatedTodos.filter((todo) => !todo.isChecked),
+      ...updatedTodos.filter((todo) => todo.isChecked),
+    ];
+
+    setTodos(sortedTodos);
   };
 
   return (
@@ -40,33 +64,43 @@ const ToDoList = () => {
           <input
             type="text"
             className="todo__input"
-            value={inputVal}
-            onChange={(e) => setInputVal(e.target.value)}
+            value={todoText}
+            onChange={(e) => setTodoText(e.target.value)}
             placeholder="할 일을 입력해 주세요."
           />
           <button className="todo__btn todo__btn--add" onClick={addTodo}>
             ➕
           </button>
         </div>
+
         <ul className="todo__list">
           {todos.map((todo, idx) => (
-            <li key={idx} className="todo__item">
-              {editIdx === idx ? (
+            <li key={todo.id} className="todo__item">
+              <input
+                type="checkbox"
+                checked={todo.isChecked}
+                onChange={() => toggleTodoChecked(idx)}
+              />
+
+              {editTodoIdx === idx ? (
                 <input
                   type="text"
                   className="todo__input--edit"
-                  value={editText}
-                  onChange={(e) => setEditText(e.target.value)}
+                  value={editTodoText}
+                  onChange={(e) => setEditTodoText(e.target.value)}
+                  // TODO: onBlur될 때 수정 버튼 disabled 풀리는 현상 추후 수정
                   onBlur={() => editTodo()}
+                  onKeyDown={(e) => e.key === "Enter" && editTodo()}
                 />
               ) : (
-                <span className="todo__text">{todo}</span>
+                <span className="todo__text">{todo.text}</span>
               )}
 
               <div className="todo__btn-group">
                 <button
                   className="todo__btn todo__btn--edit"
                   onClick={() => startEditMode(idx)}
+                  disabled={editTodoIdx === idx}
                 >
                   ✏️
                 </button>
@@ -85,4 +119,4 @@ const ToDoList = () => {
   );
 };
 
-export default ToDoList;
+export default TodoList;
